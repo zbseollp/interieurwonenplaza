@@ -6,13 +6,17 @@ export const BLOG_PAGE_SIZE = 12
 
 type Post = CollectionEntry<'blog'>
 
-/** Newest of pubDate / date / updatedDate — used for ordering only. */
+/**
+ * Publication time used for ordering. pubDate/date first, updatedDate only as a
+ * fallback when neither exists — sorting by updatedDate would push an old post
+ * above a newer one while the card still shows its original pubDate.
+ */
 function postTimestamp(post: Post): number {
   const candidates = [post.data.pubDate, post.data.date, post.data.updatedDate]
-  return candidates.reduce<number>((newest, value) => {
-    const time = value instanceof Date ? value.valueOf() : NaN
-    return Number.isNaN(time) ? newest : Math.max(newest, time)
-  }, 0)
+  for (const value of candidates) {
+    if (value instanceof Date && !Number.isNaN(value.valueOf())) return value.valueOf()
+  }
+  return 0
 }
 
 /**
