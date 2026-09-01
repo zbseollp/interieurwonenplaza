@@ -6,7 +6,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { resolveMediaUrl, DEFAULT_BLOG_IMAGE, repairTenantR2Url } from '../src/lib/media-url.mjs';
+import { resolveMediaUrl, repairTenantR2Url } from '../src/lib/media-url.mjs';
+const DEFAULT_BLOG_IMAGE = '/images/2026/04/featured.jpg';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');

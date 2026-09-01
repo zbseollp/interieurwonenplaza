@@ -1,7 +1,7 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import ArticleLayout from './ArticleLayout.astro';
-import { getEntryBlogImages } from '../lib/media';
+import { getEntryBlogImages, resolveFeaturedImageAlt } from '../lib/media';
 
 interface Props {
   entry: CollectionEntry<'blog'>;
@@ -9,7 +9,9 @@ interface Props {
 
 const { entry } = Astro.props;
 const { title, description, excerpt, pubDate, author } = entry.data;
-const { hero, featured, og } = getEntryBlogImages(entry.data);
+// Pass the body so a post with no image field still uses its first inline image.
+const { hero, featured, og } = getEntryBlogImages(entry.data, entry.body);
+const imageAlt = resolveFeaturedImageAlt(entry.data, title);
 ---
 <ArticleLayout
   title={title}
@@ -17,6 +19,7 @@ const { hero, featured, og } = getEntryBlogImages(entry.data);
   image={hero}
   featuredImage={featured}
   ogImage={og}
+  imageAlt={imageAlt}
   date={pubDate.toISOString()}
   author={author}
 >

@@ -1,10 +1,39 @@
 import { getCollection, type CollectionEntry } from 'astro:content'
+import { isSpamBlogPost } from './spam-blog'
 
 /** Posts per page on /blog/ and /blogs/ */
 export const BLOG_PAGE_SIZE = 12
 
-/** Newest-first blog posts from the local content collection (filled by Payload sync). */
-export async function getBlogPosts(): Promise<CollectionEntry<'blog'>[]> {
-  const posts = await getCollection('blog')
-  return posts.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+type Post = CollectionEntry<'blog'>
+
+/** Newest of pubDate / date / updatedDate — used for ordering only. */
+function postTimestamp(post: Post): number {
+  const candidates = [post.data.pubDate, post.data.date, post.data.updatedDate]
+  return candidates.reduce<number>((newest, value) => {
+    const time = value instanceof Date ? value.valueOf() : NaN
+    return Number.isNaN(time) ? newest : Math.max(newest, time)
+  }, 0)
+}
+
+/**
+ * Single source of truth for "is this post live?". Every listing and every
+ * getStaticPaths must go through getBlogPosts() so a post can never appear in
+ * one place and 404 in another.
+ */
+export function isPublished(post: Post): boolean {
+  if (post.data.draft) return false
+  if (post.data._status && post.data._status !== 'published') return false
+  if (isSpamBlogPost(post.id, post.body ?? '', post.data.title ?? '')) return false
+  return true
+}
+
+/** Newest-first published posts from the local collection (filled by Payload sync). */
+export async function getBlogPosts(): Promise<Post[]> {
+  const posts = await getCollection('blog', ({ data }) => !data.draft)
+  return posts.filter(isPublished).sort((a, b) => postTimestamp(b) - postTimestamp(a))
+}
+
+/** Latest N published posts, for the homepage and related-post blocks. */
+export async function getRecentBlogPosts(limit = 6): Promise<Post[]> {
+  return (await getBlogPosts()).slice(0, limit)
 }

@@ -5,13 +5,17 @@ import {
   footerLatestPostSlugs,
   footerCtaBackground,
 } from '../data/footer';
-import { getCollection } from 'astro:content';
+import { getBlogPosts } from '../lib/blog';
 
-const allPosts = await getCollection('blog');
+// Curated slugs first (when still published), then topped up with the newest
+// posts so the footer keeps updating as Payload publishes.
+const allPosts = await getBlogPosts();
 const postsBySlug = new Map(allPosts.map((post) => [post.id, post]));
-const blogPosts = footerLatestPostSlugs
+const curated = footerLatestPostSlugs
   .map((slug) => postsBySlug.get(slug))
   .filter((post): post is NonNullable<typeof post> => post !== undefined);
+const curatedIds = new Set(curated.map((post) => post.id));
+const blogPosts = [...curated, ...allPosts.filter((post) => !curatedIds.has(post.id))].slice(0, 6);
 const year = new Date().getFullYear();
 
 const socialIcons = [

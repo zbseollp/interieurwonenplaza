@@ -1,27 +1,31 @@
 ---
 import type { CollectionEntry } from 'astro:content';
-import { DEFAULT_BLOG_IMAGE, getEntryBlogImages } from '../lib/media';
+import { DEFAULT_BLOG_IMAGE, getEntryBlogImages, resolveFeaturedImageAlt } from '../lib/media';
 
 interface Props {
   entry: CollectionEntry<'blog'>;
 }
 
 const { entry } = Astro.props;
-const { title, description, excerpt, imageAlt, pubDate, author } = entry.data;
-const { featured } = getEntryBlogImages(entry.data);
+const { title, description, excerpt, pubDate, author } = entry.data;
+// entry.body lets a post with no image field fall back to its first inline image.
+const { featured } = getEntryBlogImages(entry.data, entry.body);
+const imageAlt = resolveFeaturedImageAlt(entry.data, title);
 const summary = description || excerpt;
 ---
 <article class="blog-card">
-  <a href={`/${entry.id}/`} class="blog-card__image-link">
-    <img
-      src={featured}
-      alt={imageAlt || title}
-      width="800"
-      height="450"
-      loading="lazy"
-      onerror={`this.onerror=null;this.src='${DEFAULT_BLOG_IMAGE}'`}
-    />
-  </a>
+  {featured && (
+    <a href={`/${entry.id}/`} class="blog-card__image-link">
+      <img
+        src={featured}
+        alt={imageAlt || title}
+        width="800"
+        height="450"
+        loading="lazy"
+        onerror={`this.onerror=null;this.src='${DEFAULT_BLOG_IMAGE}'`}
+      />
+    </a>
+  )}
   <div class="blog-card__body">
     <h3>
       <a href={`/${entry.id}/`}>{title}</a>
