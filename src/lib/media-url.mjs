@@ -226,7 +226,7 @@ export function toAbsoluteUrl(url, siteOrigin) {
 export function repairMediaUrlsInHtml(html, options = {}) {
   if (!html || typeof html !== 'string') return html;
 
-  const rewrite = (value) =>
+  const rewriteList = (value) =>
     value
       .split(',')
       .map((candidate) => {
@@ -237,8 +237,12 @@ export function repairMediaUrlsInHtml(html, options = {}) {
       })
       .join(', ');
 
-  return html.replace(
-    /(<img\b[^>]*?\b(?:src|srcset|data-src)=)(["'])(.*?)\2/gi,
-    (match, head, quote, value) => `${head}${quote}${rewrite(value)}${quote}`,
+  // Match whole <img> tags first, then every source attribute inside each one —
+  // a single pass over the attributes would only ever rewrite the first.
+  return html.replace(/<img\b[^>]*>/gi, (tag) =>
+    tag.replace(
+      /\b(src|srcset|data-src|data-srcset)=(["'])(.*?)\2/gi,
+      (attr, name, quote, value) => `${name}=${quote}${rewriteList(value)}${quote}`,
+    ),
   );
 }
